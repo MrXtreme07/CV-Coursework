@@ -1,0 +1,18 @@
+# Data
+data/
+outputs/
+
+# Build
+cpp/build/
+
+# Python
+__pycache__/
+*.pyc
+
+# Models
+*.pt
+*.pth
+*.onnx
+
+# Conda
+.env
