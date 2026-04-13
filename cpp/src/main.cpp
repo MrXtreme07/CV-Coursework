@@ -54,7 +54,20 @@ void run_exp03() {
     imgproc::saveImage("../../outputs/exp03/perspective.jpg", perspective);
 }
 
+void run_exp04() {
+    std::string input_path = "../../data/raw/hat_woman.png";
+
+    auto img = imgproc::loadImage(input_path);
+    auto gray = imgproc::toGrayscale(img);
+
+    auto harris = imgproc::harrisCorners(gray);
+    auto shi = imgproc::shiTomasiCorners(gray);
+
+    imgproc::saveImage("../../outputs/exp04/harris.jpg", harris);
+    imgproc::saveImage("../../outputs/exp04/shi_tomasi.jpg", shi);
+}
+
 int main() {
-    run_exp03();
+    run_exp04();
     return 0;
 }

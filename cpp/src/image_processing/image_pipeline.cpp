@@ -116,6 +116,48 @@ namespace imgproc {
         cv::warpPerspective(image, result, M, image.size());
         return result;
     }
+
+    cv::Mat harrisCorners(const cv::Mat& image) {
+        cv::Mat gray, dst, dst_norm;
+
+        gray = image.clone();
+
+        cv::cornerHarris(gray, dst, 2, 3, 0.04);
+        
+        cv::normalize(dst, dst_norm, 0, 255, cv::NORM_MINMAX);
+
+        cv::Mat result;
+        cv::cvtColor(gray, result, cv::COLOR_GRAY2BGR);
+
+        for (int i = 0; i < dst_norm.rows; i++) {
+            for (int j = 0; j<dst_norm.cols; j++) {
+                if((int)dst_norm.at<float>(i,j) > 120){
+                    cv::circle(result, cv::Point(j,i), 3, cv::Scalar(0,0,255), -1);
+                }
+            }
+        }
+        return result;
+    }
+
+    cv::Mat shiTomasiCorners(const cv::Mat& image) {
+        std::vector<cv::Point2f> corners;
+
+        cv::goodFeaturesToTrack(
+            image,
+            corners,
+            200,    // max corners
+            0.01,   // quality
+            10      // min distance
+        );
+        
+        cv::Mat result;
+        cv::cvtColor(image, result, cv::COLOR_GRAY2BGR);
+
+        for (auto& pt: corners) {
+            cv::circle(result, pt, 3, cv::Scalar(0,255,0), -1);
+        }
+        return result;
+    }
     
     void saveImage(const std::string& path, const cv::Mat& image) {
         cv::imwrite(path, image);

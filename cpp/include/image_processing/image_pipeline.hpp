@@ -28,5 +28,9 @@ namespace imgproc{
 
     cv::Mat perspectiveTransform(const cv::Mat& image);
 
+    cv::Mat harrisCorners(const cv::Mat& image);
+
+    cv::Mat shiTomasiCorners(const cv::Mat& image);
+
     void saveImage(const std::string& path, const cv::Mat& image);
 }
