@@ -158,6 +158,41 @@ namespace imgproc {
         }
         return result;
     }
+
+    cv::Mat fastKeypoints(const cv::Mat& image) {
+        std::vector<cv::KeyPoint> keypoints;
+
+        cv::Ptr<cv::FastFeatureDetector> detector = cv::FastFeatureDetector::create(25,true);
+
+        detector->detect(image, keypoints);
+
+        cv::Mat result;
+        cv::cvtColor(image, result, cv::COLOR_GRAY2BGR);
+
+        cv::drawKeypoints(image, keypoints, result, cv::Scalar(255, 0 ,0));
+
+        return result;
+    }
+
+    cv::Mat orbKeypoints(const cv::Mat& image) {
+        std::vector<cv::KeyPoint> keypoints;
+        cv::Mat descriptors;
+
+        auto orb = cv::ORB::create(500);
+
+        orb->detectAndCompute(image, cv::noArray(), keypoints, descriptors);
+
+        cv::Mat result;
+        cv::cvtColor(image, result, cv::COLOR_GRAY2BGR);
+
+        cv::drawKeypoints(image, keypoints, result, cv::Scalar(0, 0, 255));
+
+        std::cout << "Descriptors size: "
+                << descriptors.rows << " x "
+                << descriptors.cols << std::endl;
+
+        return result;
+    }
     
     void saveImage(const std::string& path, const cv::Mat& image) {
         cv::imwrite(path, image);

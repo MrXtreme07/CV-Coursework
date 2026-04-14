@@ -32,5 +32,9 @@ namespace imgproc{
 
     cv::Mat shiTomasiCorners(const cv::Mat& image);
 
+    cv::Mat fastKeypoints(const cv::Mat& image);
+
+    cv::Mat orbKeypoints(const cv::Mat& image);
+
     void saveImage(const std::string& path, const cv::Mat& image);
 }

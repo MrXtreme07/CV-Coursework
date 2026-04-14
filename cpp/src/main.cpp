@@ -67,7 +67,20 @@ void run_exp04() {
     imgproc::saveImage("../../outputs/exp04/shi_tomasi.jpg", shi);
 }
 
+void run_exp05() {
+    std::string input_path = "../../data/raw/hat_woman.png";
+
+    auto img = imgproc::loadImage(input_path);
+    auto gray = imgproc::toGrayscale(img);
+
+    auto fast = imgproc::fastKeypoints(gray);
+    imgproc::saveImage("../../outputs/exp05/fast.jpg", fast);
+
+    auto orb = imgproc::orbKeypoints(gray);
+    imgproc::saveImage("../../outputs/exp05/orb.jpg", orb);
+}
+
 int main() {
-    run_exp04();
+    run_exp05();
     return 0;
 }
