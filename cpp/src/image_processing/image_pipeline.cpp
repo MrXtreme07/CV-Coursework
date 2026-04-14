@@ -193,6 +193,52 @@ namespace imgproc {
 
         return result;
     }
+
+    cv::Mat orbMatching(const cv::Mat& img1, const cv::Mat& img2) {
+        std::vector<cv::KeyPoint> kp1, kp2;
+        cv::Mat desc1, desc2;
+
+        auto orb = cv::ORB::create(500);
+
+        // Detect and Compute
+        orb->detectAndCompute(img1, cv::noArray(), kp1, desc1);
+        orb->detectAndCompute(img2, cv::noArray(), kp2, desc2);
+
+        if (desc1.empty() || desc2.empty()) {
+            std::cerr << "[ERROR] No descriptors found!" << std::endl;
+            return cv::Mat();
+        }
+
+        //Matcher (Hamming for Binary Distance)
+        cv::BFMatcher matcher(cv::NORM_HAMMING);
+
+        std::vector<cv::DMatch> matches;
+        matcher.match(desc1, desc2, matches);
+
+        // Sort matches (best First)
+        std::sort(matches.begin(), matches.end(),
+            [](cv::DMatch& a, cv::DMatch& b) {
+                return a.distance < b.distance;
+        });
+
+        // Keep top matches
+        int num = std::min(50, (int)matches.size());
+        std::vector<cv::DMatch> good_matches(matches.begin(), matches.begin()+num);
+
+        cv::Mat result;
+        cv::drawMatches(img1, kp1, img2, kp2, good_matches, result);
+
+        return result;
+    }
+
+    cv::Mat orbRotationTest(const cv::Mat& image, double angle) {
+        auto rotated = imgproc::rotateImage(image, angle);
+
+        auto gray1 = image.clone();
+        auto gray2 = rotated.clone();
+
+        return imgproc::orbMatching(gray1, gray2);
+    }
     
     void saveImage(const std::string& path, const cv::Mat& image) {
         cv::imwrite(path, image);

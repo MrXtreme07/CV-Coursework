@@ -36,5 +36,9 @@ namespace imgproc{
 
     cv::Mat orbKeypoints(const cv::Mat& image);
 
+    cv::Mat orbMatching(const cv::Mat& img1, const cv::Mat& img2);
+
+    cv::Mat orbRotationTest(const cv::Mat& image, double angle);
+
     void saveImage(const std::string& path, const cv::Mat& image);
 }

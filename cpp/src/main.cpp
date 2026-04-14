@@ -80,7 +80,21 @@ void run_exp05() {
     imgproc::saveImage("../../outputs/exp05/orb.jpg", orb);
 }
 
+void run_exp06() {
+    auto img1 = imgproc::loadImage("../../data/raw/f1_1.jpeg");
+    auto img2 = imgproc::loadImage("../../data/raw/f1_2.jpeg");
+
+    auto gray1 = imgproc::toGrayscale(img1);
+    auto gray2 = imgproc::toGrayscale(img2);
+
+    auto matches = imgproc::orbMatching(gray1, gray2);
+    imgproc::saveImage("../../outputs/exp06/matches.jpeg", matches);
+
+    auto rot_matches = imgproc::orbRotationTest(gray1, 60);
+    imgproc::saveImage("../../outputs/exp06/rot_matches.jpeg", rot_matches);
+}
+
 int main() {
-    run_exp05();
+    run_exp06();
     return 0;
 }
