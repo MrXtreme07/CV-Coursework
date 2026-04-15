@@ -94,7 +94,19 @@ void run_exp06() {
     imgproc::saveImage("../../outputs/exp06/rot_matches.jpeg", rot_matches);
 }
 
+void run_exp07() {
+    auto img1 = imgproc::loadImage("../../data/opencv/graf1.png");
+    auto img2 = imgproc::loadImage("../../data/opencv/graf3.png");
+
+    auto gray1 = imgproc::toGrayscale(img1);
+    auto gray2 = imgproc::toGrayscale(img2);
+
+    auto warped = imgproc::computeHomographyAndWarp(gray1, gray2);
+
+    imgproc::saveImage("../../outputs/exp07/warped.jpeg", warped);
+}
+
 int main() {
-    run_exp06();
+    run_exp07();
     return 0;
 }

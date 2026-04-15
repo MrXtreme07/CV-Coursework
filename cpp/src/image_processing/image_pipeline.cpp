@@ -239,6 +239,95 @@ namespace imgproc {
 
         return imgproc::orbMatching(gray1, gray2);
     }
+
+    cv::Mat computeHomographyAndWarp(const cv::Mat& img1, const cv::Mat& img2) {
+        std::vector<cv::KeyPoint> kp1, kp2;
+        cv::Mat desc1, desc2;
+
+        auto orb = cv::ORB::create(1500);
+
+        // Detect and compute
+        orb->detectAndCompute(img1, cv::noArray(), kp1, desc1);
+        orb->detectAndCompute(img2, cv::noArray(), kp2, desc2);
+
+        if (desc1.empty() || desc2.empty()) {
+            std::cerr << "[ERROR] No descriptors found!" << std::endl;
+            return cv::Mat();
+        }
+
+        // -------------------------------
+        // KNN Matching + Ratio Test
+        // -------------------------------
+        cv::BFMatcher matcher(cv::NORM_HAMMING);
+
+        std::vector<std::vector<cv::DMatch>> knn_matches;
+        matcher.knnMatch(desc1, desc2, knn_matches, 2);
+
+        std::vector<cv::DMatch> good_matches;
+
+        for (const auto& m : knn_matches) {
+            if (m.size() < 2) continue;
+
+            if (m[0].distance < 0.75 * m[1].distance) {
+                good_matches.push_back(m[0]);
+            }
+        }
+
+        std::cout << "Good matches: " << good_matches.size() << std::endl;
+
+        if (good_matches.size() < 10) {
+            std::cerr << "[ERROR] Not enough good matches!" << std::endl;
+            return cv::Mat();
+        }
+
+        // -------------------------------
+        // Extract matched points
+        // -------------------------------
+        std::vector<cv::Point2f> pts1, pts2;
+
+        for (const auto& m : good_matches) {
+            pts1.push_back(kp1[m.queryIdx].pt);
+            pts2.push_back(kp2[m.trainIdx].pt);
+        }
+
+        // -------------------------------
+        // Compute Homography (RANSAC)
+        // -------------------------------
+        cv::Mat inlier_mask;
+        cv::Mat H = cv::findHomography(pts1, pts2, cv::RANSAC, 3.0, inlier_mask);
+
+        if (H.empty()) {
+            std::cerr << "[ERROR] Homography computation failed!" << std::endl;
+            return cv::Mat();
+        }
+
+        // -------------------------------
+        // Warp Image
+        // -------------------------------
+        cv::Mat warped;
+        cv::warpPerspective(img1, warped, H, img2.size());
+
+        // -------------------------------
+        // (Optional) Draw Inlier Matches
+        // -------------------------------
+        std::vector<cv::DMatch> inliers;
+
+        for (size_t i = 0; i < good_matches.size(); i++) {
+            if (inlier_mask.at<uchar>(i)) {
+                inliers.push_back(good_matches[i]);
+            }
+        }
+
+        cv::Mat match_vis;
+        cv::drawMatches(img1, kp1, img2, kp2, inliers, match_vis);
+
+        // Save debug image (VERY useful)
+        cv::imwrite("../../outputs/exp07/inlier_matches.jpg", match_vis);
+
+        std::cout << "Inliers: " << inliers.size() << std::endl;
+
+        return warped;
+    }
     
     void saveImage(const std::string& path, const cv::Mat& image) {
         cv::imwrite(path, image);

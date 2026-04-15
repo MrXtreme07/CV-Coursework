@@ -39,6 +39,8 @@ namespace imgproc{
     cv::Mat orbMatching(const cv::Mat& img1, const cv::Mat& img2);
 
     cv::Mat orbRotationTest(const cv::Mat& image, double angle);
+    
+    cv::Mat computeHomographyAndWarp(const cv::Mat& img1, const cv::Mat& img2);
 
     void saveImage(const std::string& path, const cv::Mat& image);
 }
