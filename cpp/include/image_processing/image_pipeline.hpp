@@ -42,5 +42,7 @@ namespace imgproc{
     
     cv::Mat computeHomographyAndWarp(const cv::Mat& img1, const cv::Mat& img2);
 
+    cv::Mat stitchImages(const cv::Mat& img1, const cv::Mat& img2);
+
     void saveImage(const std::string& path, const cv::Mat& image);
 }

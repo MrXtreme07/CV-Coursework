@@ -106,7 +106,19 @@ void run_exp07() {
     imgproc::saveImage("../../outputs/exp07/warped.jpeg", warped);
 }
 
+void run_exp08() {
+    auto img1 = imgproc::loadImage("../../data/panaroma/Faculty_of_arts_and_design_I/imagem_005.png");
+    auto img2 = imgproc::loadImage("../../data/panaroma/Faculty_of_arts_and_design_I/imagem_006.png");
+
+    auto gray1 = imgproc::toGrayscale(img1);
+    auto gray2 = imgproc::toGrayscale(img2);
+
+    auto pano = imgproc::stitchImages(gray1, gray2);
+
+    imgproc::saveImage("../../outputs/exp08/panaroma.jpeg", pano);
+}
+
 int main() {
-    run_exp07();
+    run_exp08();
     return 0;
 }

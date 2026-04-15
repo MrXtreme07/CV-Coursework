@@ -328,6 +328,66 @@ namespace imgproc {
 
         return warped;
     }
+
+    cv::Mat stitchImages(const cv::Mat& img1, const cv::Mat& img2) {
+        std::vector<cv::KeyPoint> kp1, kp2;
+        cv::Mat desc1, desc2;
+
+        auto orb = cv::ORB::create(1500);
+
+        orb->detectAndCompute(img1, cv::noArray(), kp1, desc1);
+        orb->detectAndCompute(img2, cv::noArray(), kp2, desc2);
+
+        if (desc1.empty() || desc2.empty()) {
+            std::cerr << "[ERROR] No descriptors found!" << std::endl;
+            return cv::Mat();
+        }
+
+        // KNN Matching
+        cv::BFMatcher matcher(cv::NORM_HAMMING);
+        std::vector<std::vector<cv::DMatch>> knn_matches;
+        matcher.knnMatch(desc1, desc2, knn_matches, 2);
+
+        std::vector<cv::DMatch> good_matches;
+        for (const auto& m: knn_matches) {
+            if (m.size() < 2) continue;
+            if (m[0].distance < 0.75 * m[1].distance)
+                good_matches.push_back(m[0]);
+        }
+
+        if (good_matches.size() < 10) {
+            std::cerr << "[ERROR] Not enough matches!" << std::endl;
+            return cv::Mat();
+        }
+
+        // Extract matched points
+        std::vector<cv::Point2f> pts1, pts2;
+        for (const auto& m : good_matches) {
+            pts1.push_back(kp1[m.queryIdx].pt);
+            pts2.push_back(kp2[m.trainIdx].pt);
+        }
+
+        cv::Mat H = cv::findHomography(pts1, pts2, cv::RANSAC);
+
+        if (H.empty()) {
+            std::cerr << "[ERROR] Homography failed!" << std::endl;
+            return cv::Mat();
+        }
+
+        // Create a large canvas
+        int width = img1.cols + img2.cols;
+        int height = std::max(img1.rows, img2.rows);
+        
+        cv::Mat result(height, width, img1.type(), cv::Scalar::all(0));
+
+        // Warp img1
+        cv::warpPerspective(img1, result, H, result.size());
+
+        // Copy img2 into result
+        img2.copyTo(result(cv::Rect(0,0,img2.cols,img2.rows)));
+
+        return result;
+    }
     
     void saveImage(const std::string& path, const cv::Mat& image) {
         cv::imwrite(path, image);
