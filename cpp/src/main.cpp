@@ -1,5 +1,7 @@
 #include <iostream>
 #include "image_processing/image_pipeline.hpp"
+#include <fstream>
+#include <sstream>
 
 void run_exp01() {
     std::string input_path = "../../data/raw/hat_woman.png";
@@ -132,7 +134,84 @@ void run_exp09() {
     imgproc::saveImage("../../outputs/exp09/sift.jpeg", sift_matches);
 }
 
+void run_exp10() {
+    std::string train_path = "../../data/bovw/train";
+    std::string test_path = "../../data/bovw/test";
+
+    auto train_data = imgproc::loadDataset(train_path);
+    auto test_data = imgproc::loadDataset(test_path);
+
+    // Extract only images for vocab
+    std::vector<cv::Mat> train_images;
+    for (auto& item : train_data) {
+        train_images.push_back(item.first);
+    }
+
+    // Build vocab
+    cv::Mat all_desc = imgproc::collectAllDescriptors(train_images);
+
+    int K = 30;
+    cv::Mat vocab = imgproc::buildVocabulary(all_desc, K);
+
+    // Compute train histograms
+    std::vector<cv::Mat> train_hists;
+    std::vector<std::string> train_labels;
+
+    for (auto& item : train_data) {
+        auto desc = imgproc::extractSIFTDescriptors(item.first);
+        auto hist = imgproc::computeHistogram(desc, vocab);
+
+        train_hists.push_back(hist);
+        train_labels.push_back(item.second);
+    }
+
+    // Test
+    int idx=0;
+    
+    for (auto& item : test_data) {
+        auto desc = imgproc::extractSIFTDescriptors(item.first);
+        auto hist = imgproc::computeHistogram(desc, vocab);
+
+        double best_dist = DBL_MAX;
+        std::string best_label;
+
+        std::stringstream log;
+
+        for (int i = 0; i < train_hists.size(); i++) {
+            double dist = imgproc::compareHistograms(hist, train_hists[i]);
+            
+            log << "Train[" << i << "] (" << train_labels[i] << ") = " << dist << "\n"; 
+
+            if (dist < best_dist) {
+                best_dist = dist;
+                best_label = train_labels[i];
+            }
+        }
+
+        std::string result_text = "Pred: "+best_label+" | GT: "+item.second;
+
+        std::cout << result_text << std::endl;
+
+        // Save image
+        auto vis = imgproc::drawLabel(item.first, result_text);
+
+        std::string img_path = "../../outputs/exp10/result_"+std::to_string(idx)+".jpg";
+        cv::imwrite(img_path, vis);
+
+        // Save log file
+        std::string txt_path = "../../outputs/exp10/result_"+std::to_string(idx)+".txt";
+
+        std::ofstream file(txt_path);
+        file << "Prediction: " << best_label << std::endl;
+        file << "Ground Truth: " << item.second << "\n\n";
+        file << log.str();
+        file.close();
+
+        idx++;
+    }
+}
+
 int main() {
-    run_exp09();
+    run_exp10();
     return 0;
 }

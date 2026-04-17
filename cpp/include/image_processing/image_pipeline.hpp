@@ -46,5 +46,19 @@ namespace imgproc{
 
     cv::Mat siftMatching(const cv::Mat& img1, const cv::Mat& img2);
 
+    cv::Mat extractSIFTDescriptors(const cv::Mat& image);
+
+    cv::Mat collectAllDescriptors(const std::vector<cv::Mat>& imaages);
+
+    cv::Mat buildVocabulary(const cv::Mat& all_desc, int K);
+
+    cv::Mat computeHistogram(const cv::Mat& descriptors, const cv::Mat& vocab);
+
+    double compareHistograms(const cv::Mat& h1, const cv::Mat& h2);
+
+    std::vector<std::pair<cv::Mat, std::string>> loadDataset(const std::string& root_path);
+
+    cv::Mat drawLabel(const cv::Mat& img, const std::string& text);
+
     void saveImage(const std::string& path, const cv::Mat& image);
 }

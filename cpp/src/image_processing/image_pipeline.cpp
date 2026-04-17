@@ -1,5 +1,7 @@
 #include "image_processing/image_pipeline.hpp"
 #include <iostream>
+#include <filesystem>
+namespace fs = std::filesystem;
 
 namespace imgproc {
     cv::Mat loadImage(const std::string& path) {
@@ -424,6 +426,112 @@ namespace imgproc {
         cv::drawMatches(img1, kp1, img2, kp2, good_matches, result);
 
         return result;
+    }
+
+    cv::Mat extractSIFTDescriptors(const cv::Mat& image) {
+        std::vector<cv::KeyPoint> keypoints;
+        cv::Mat descriptors;
+
+        auto sift = cv::SIFT::create();
+        sift->detectAndCompute(image, cv::noArray(), keypoints, descriptors);
+
+        return descriptors;
+    }
+
+    cv::Mat collectAllDescriptors(const std::vector<cv::Mat>& images) {
+        cv::Mat all_desc;
+
+        for (const auto& img : images) {
+            auto desc = extractSIFTDescriptors(img);
+            if (!desc.empty()) {
+                all_desc.push_back(desc);
+            }
+        }
+        
+        return all_desc;
+    }
+
+    cv::Mat buildVocabulary(const cv::Mat& all_desc, int K){
+        cv::Mat labels, centers;
+
+        cv::kmeans(
+            all_desc,
+            K,
+            labels,
+            cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 100, 0.01),
+            3,
+            cv::KMEANS_PP_CENTERS,
+            centers
+        );
+
+        return centers;
+    }
+
+    cv::Mat computeHistogram(const cv::Mat& descriptors, const cv::Mat& vocab) {
+        if(descriptors.empty() || vocab.empty()) {
+            std::cerr << "[ERROR] Descriptors or Vocabulary is empty!" << std::endl;
+            return cv::Mat::zeros(1, vocab.rows, CV_32F);
+        }
+        
+        int K = vocab.rows;
+
+        cv::Mat hist = cv::Mat::zeros(1, K, CV_32F);
+
+        for (int i = 0; i < descriptors.rows; i++) {
+            double best_dist = DBL_MAX;
+            int best_idx = 0;
+
+            for(int j = 0; j < K; j++) {
+                double dist = cv::norm(descriptors.row(i), vocab.row(j), cv::NORM_L2);
+
+                if (dist < best_dist) {
+                    best_dist = dist;
+                    best_idx = j;
+                }
+            }
+            hist.at<float>(0, best_idx)++;
+        }
+
+        // Normalize Histogram
+        hist /= descriptors.rows;
+
+        return hist;
+    }
+
+    double compareHistograms(const cv::Mat& h1, const cv::Mat& h2) {
+        return cv::norm(h1,h2,cv::NORM_L2);
+    }
+
+    std::vector<std::pair<cv::Mat, std::string>> loadDataset(const std::string& root_path) {
+        std::vector<std::pair<cv::Mat, std::string>> dataset;
+
+        for (const auto& class_dir : fs::directory_iterator(root_path)) {
+            if (!class_dir.is_directory()) continue;
+
+            std::string label = class_dir.path().filename().string();
+
+            for (const auto& file : fs::directory_iterator(class_dir.path())) {
+                std::string file_path = file.path().string();
+                cv::Mat img = cv::imread(file_path);
+
+                if (img.empty()) continue;
+
+                cv::Mat gray;
+                cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
+
+                dataset.push_back({gray, label});
+            }
+        }
+        return dataset;
+    }
+
+    cv::Mat drawLabel(const cv::Mat& img, const std::string& text) {
+        cv::Mat color;
+        cv::cvtColor(img, color, cv::COLOR_GRAY2BGR);
+
+        cv::putText(color, text, cv::Point(20,40), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,255,0),2);
+        
+        return color;
     }
     
     void saveImage(const std::string& path, const cv::Mat& image) {
