@@ -388,6 +388,43 @@ namespace imgproc {
 
         return result;
     }
+
+    cv::Mat siftMatching(const cv::Mat& img1, const cv::Mat& img2) {
+        std::vector<cv::KeyPoint> kp1, kp2;
+        cv::Mat desc1, desc2;
+
+        auto sift = cv::SIFT::create();
+        
+        sift->detectAndCompute(img1, cv::noArray(), kp1, desc1);
+        sift->detectAndCompute(img2, cv::noArray(), kp2, desc2);
+
+        if(desc1.empty() || desc2.empty()) {
+            std::cerr << "[ERROR] No descriptors found!" << std::endl;
+            return cv::Mat();
+        }
+
+        // L2 Matcher
+        cv::BFMatcher matcher(cv::NORM_L2);
+
+        std::vector<std::vector<cv::DMatch>> knn_matches;
+        matcher.knnMatch(desc1, desc2, knn_matches, 2);
+
+        std::vector<cv::DMatch> good_matches;
+
+        for(const auto& m : knn_matches) {
+            if(m.size() < 2) continue;
+            if(m[0].distance < 0.75 * m[1].distance) {
+                good_matches.push_back(m[0]);
+            }
+        }
+
+        std::cout << "[SIFT] Good Matches: " << good_matches.size() << std::endl;
+
+        cv::Mat result;
+        cv::drawMatches(img1, kp1, img2, kp2, good_matches, result);
+
+        return result;
+    }
     
     void saveImage(const std::string& path, const cv::Mat& image) {
         cv::imwrite(path, image);

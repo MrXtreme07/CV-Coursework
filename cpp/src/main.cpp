@@ -118,7 +118,21 @@ void run_exp08() {
     imgproc::saveImage("../../outputs/exp08/panaroma.jpeg", pano);
 }
 
+void run_exp09() {
+    auto img1 = imgproc::loadImage("../../data/opencv/graf1.png");
+    auto img2 = imgproc::loadImage("../../data/opencv/graf3.png");
+
+    auto gray1 = imgproc::toGrayscale(img1);
+    auto gray2 = imgproc::toGrayscale(img2);
+
+    auto orb_matches = imgproc::orbMatching(gray1, gray2);
+    imgproc::saveImage("../../outputs/exp09/orb.jpeg", orb_matches);
+
+    auto sift_matches = imgproc::siftMatching(gray1, gray2);
+    imgproc::saveImage("../../outputs/exp09/sift.jpeg", sift_matches);
+}
+
 int main() {
-    run_exp08();
+    run_exp09();
     return 0;
 }
